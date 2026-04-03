@@ -57,7 +57,7 @@ const ChatView = ({ requestId, role, name }) => {
       </div>
       <div className="p-3 bg-white/80 border-t border-slate-100 space-y-2">
         <div className="flex gap-1.5 overflow-x-auto pb-1 no-scrollbar">
-          {['Yoldayım!', 'Kapıdayım', 'Teşekkürler!'].map(q => (
+          {['Yoldayım!', 'Kapıdayım', 'Bekliyorum', 'Teşekkürler!'].map(q => (
             <button key={q} onClick={() => sendMsg(q)} className="text-[10px] bg-slate-50 px-3 py-1.5 rounded-full whitespace-nowrap text-slate-500 border border-slate-100 active:bg-pink-50 transition-colors">{q}</button>
           ))}
         </div>
@@ -113,7 +113,7 @@ export default function App() {
     setMonthlyCount(count || 0);
   }, []);
 
-  // INITIALIZATION AND REALTIME SYNC
+  // INITIALIZATION AND REFINED REALTIME SYNC
   useEffect(() => {
     const script = document.createElement('script');
     script.src = 'https://cdn.tailwindcss.com';
@@ -139,13 +139,24 @@ export default function App() {
     };
     init();
 
-    // FIXED REALTIME: Better event handling for auto-refresh
-    const requestsSub = supabase.channel('yaninda-realtime-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload) => {
-        // Force state update by refetching
-        fetchData();
-        const storedUid = localStorage.getItem('padpal_uid');
-        if (storedUid) updateMonthlyCount(storedUid);
+    // PRODUCTION-LEVEL REALTIME: Direct state updates without refetching
+    const requestsSub = supabase.channel('yaninda-dynamic-sync')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'requests' }, (payload) => {
+        // If student view, only add if it belongs to them. If volunteer view, add always.
+        const isOwner = payload.new.requester_id === requesterId;
+        if (user || isOwner) {
+          setRequests(prev => [payload.new, ...prev]);
+        }
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'requests' }, (payload) => {
+        setRequests(prev => prev.map(req => req.id === payload.new.id ? payload.new : req));
+        // If status changed to Completed, update the local counter if it's the current student
+        if (payload.new.status === 'Completed' && payload.new.requester_id === requesterId) {
+          updateMonthlyCount(requesterId);
+        }
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'requests' }, (payload) => {
+        setRequests(prev => prev.filter(req => req.id !== payload.old.id));
       })
       .on('postgres_changes', { event: '*', schema: 'public', table: 'volunteers' }, () => {
         if (user?.is_admin) fetchData();
@@ -153,7 +164,7 @@ export default function App() {
       .subscribe();
 
     return () => { supabase.removeChannel(requestsSub); };
-  }, [fetchData, updateMonthlyCount, requesterId, user?.is_admin]);
+  }, [fetchData, updateMonthlyCount, requesterId, user]);
 
   const sendTelegram = async (location) => {
     try {
@@ -172,7 +183,7 @@ export default function App() {
       sendTelegram(selectedLocation);
       setShowConfirmModal(false);
       setSelectedLocation("");
-      fetchData();
+      // fetchData() is no longer strictly needed here because Realtime INSERT will catch it
     }
   };
 
@@ -196,7 +207,7 @@ export default function App() {
     const reason = formData.get('reason');
     if (!reason) return;
     const { error } = await supabase.from('requests').update({ status: 'Cancelled', cancellation_reason: reason }).eq('id', showCancelModal.id);
-    if (!error) { setShowCancelModal(null); fetchData(); }
+    if (!error) { setShowCancelModal(null); }
   };
 
   const handleEvaluation = async (e) => {
@@ -210,7 +221,7 @@ export default function App() {
 
   const handleConfirmReceipt = async (id) => {
     const { error } = await supabase.from('requests').update({ status: 'Completed' }).eq('id', id);
-    if (!error) { await updateMonthlyCount(requesterId); fetchData(); setShowEvalModal(id); }
+    if (!error) { setShowEvalModal(id); }
   };
 
   const getAnalytics = () => {
@@ -325,7 +336,6 @@ export default function App() {
       <main className="max-w-md mx-auto p-6 space-y-8 animate-in slide-in-from-bottom-4 duration-700">
         {activeTab === 'request' && (
           <>
-            {/* PINK GRADIENT HEADER CARD */}
             <div className="bg-gradient-to-br from-pink-500 to-rose-400 p-8 rounded-[45px] text-white shadow-2xl shadow-pink-200 relative overflow-hidden">
                 <div className="relative z-10 flex justify-between items-start">
                     <div className="max-w-[70%]">
@@ -525,11 +535,11 @@ export default function App() {
             </div>
 
             <div className="grid grid-cols-2 gap-6">
-                <div className="bg-white p-8 rounded-[45px] shadow-sm border border-slate-50 text-center">
+                <div className="bg-white p-8 rounded-[45px] shadow-sm border border-slate-100 text-center">
                     <p className="text-4xl font-black text-slate-800 tracking-tighter mb-2">{getAnalytics().total}</p>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Toplam Talep</p>
                 </div>
-                <div className="bg-white p-8 rounded-[45px] shadow-sm border border-slate-50 text-center">
+                <div className="bg-white p-8 rounded-[45px] shadow-sm border border-slate-100 text-center">
                     <p className="text-4xl font-black text-green-500 tracking-tighter mb-2">{getAnalytics().completed}</p>
                     <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Başarılı Yardım</p>
                 </div>
