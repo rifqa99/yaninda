@@ -8,9 +8,9 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-const supabaseUrl = 'https://nncozxzldugbtxorgazb.supabase.co';
+const supabaseUrl = 'https://ewhoouptqrtesardpsqh.supabase.co';
 // تم تصحيح المفتاح هنا (كان به خطأ مطبعي في النسخة السابقة)
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uY296eHpsZHVnYnR4b3JnYXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzYzMTQsImV4cCI6MjA5MDU1MjMxNH0.Nz9uayFcVIXP58ewbkm5ZOBZQM3pvUK4-E5TJuFBcy0'; 
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3aG9vdXB0cXJ0ZXNhcmRwc3FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg4NTIsImV4cCI6MjA5MDc4NDg1Mn0.BdAeT63Fk3GgHS_Diy6P9RcJVClttwLNB2blY2azP9s'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 const TELEGRAM_TOKEN = '8558988894:AAEX-TH3YxxLWDwOomkR60tnU75eKRz88Ak'; 
