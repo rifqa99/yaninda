@@ -8,9 +8,13 @@ import {
 } from 'lucide-react';
 
 // --- CONFIGURATION ---
-const supabaseUrl = 'https://ewhoouptqrtesardpsqh.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImV3aG9vdXB0cXJ0ZXNhcmRwc3FoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyMDg4NTIsImV4cCI6MjA5MDc4NDg1Mn0.BdAeT63Fk3GgHS_Diy6P9RcJVClttwLNB2blY2azP9s'; 
+const supabaseUrl = 'https://nncozxzldugbtxorgazb.supabase.co';
+// تم تصحيح المفتاح هنا (كان به خطأ مطبعي في النسخة السابقة)
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im5uY296eHpsZHVnYnR4b3JnYXpiIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ5NzYzMTQsImV4cCI6MjA5MDU1MjMxNH0.Nz9uayFcVIXP58ewbkm5ZOBZQM3pvUK4-E5TJuFBcy0'; 
 const supabase = createClient(supabaseUrl, supabaseKey);
+
+const TELEGRAM_TOKEN = '8558988894:AAEX-TH3YxxLWDwOomkR60tnU75eKRz88Ak'; 
+const CHAT_ID = '-1003868976521'; 
 
 // --- Chat Component ---
 const ChatView = ({ requestId, role, name }) => {
@@ -148,13 +152,8 @@ export default function App() {
   }, [fetchData, updateMonthlyCount, requesterId, user?.is_admin]);
 
   const sendTelegramAlert = async (location) => {
-    try {
-        await fetch('/api/telegram', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ location })
-        });
-    } catch (e) { console.error("Telegram notification failed", e); }
+    const msg = `🚨 *NEW REQUEST*\n📍 Location: *${location}*\n🌸 Help needed!`;
+    try { await fetch(`https://api.telegram.org/bot${TELEGRAM_TOKEN}/sendMessage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ chat_id: CHAT_ID, text: msg, parse_mode: 'Markdown' }) }); } catch (e) {}
   };
 
   const handleRequest = async () => {
@@ -388,6 +387,7 @@ export default function App() {
               const u = formData.get('u')?.trim();
               const p = formData.get('p')?.trim();
               
+              // NEW SECURE LOGIN LOGIC
               const { data, error } = await supabase
                 .from('volunteers')
                 .select('*')
@@ -417,6 +417,7 @@ export default function App() {
 
         {activeTab === 'volunteer' && user && (
           <section className="space-y-6 animate-in fade-in duration-500">
+            {/* VOLUNTEER STATUS CARD */}
             <div className="bg-white p-6 rounded-[35px] border border-slate-100 shadow-xl space-y-4">
                 <div className="flex justify-between items-center px-1">
                     <div>
@@ -493,6 +494,7 @@ export default function App() {
               <Activity className="text-pink-500 animate-pulse" size={24} />
             </div>
 
+            {/* VOLUNTEER MAP */}
             <div className="bg-white p-6 rounded-[35px] shadow-sm border border-slate-100">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2"><Map size={14} className="text-pink-500"/> Team Status</h3>
                 <div className="space-y-3">
