@@ -139,9 +139,10 @@ export default function App() {
     };
     init();
 
-    // GLOBAL REALTIME LISTENER: Updates everything automatically
-    const requestsSub = supabase.channel('global-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, () => {
+    // FIXED REALTIME: Better event handling for auto-refresh
+    const requestsSub = supabase.channel('yaninda-realtime-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'requests' }, (payload) => {
+        // Force state update by refetching
         fetchData();
         const storedUid = localStorage.getItem('padpal_uid');
         if (storedUid) updateMonthlyCount(storedUid);
@@ -265,7 +266,7 @@ export default function App() {
             <h4 className="font-black text-slate-800 text-xl mb-3 text-center">Talebi Onayla</h4>
             <p className="text-sm text-slate-500 mb-8 leading-relaxed text-center font-medium">Yardım talebiniz <span className="font-bold text-pink-500 underline underline-offset-4 decoration-pink-100">{selectedLocation}</span> konumuna gönderilecek. Onaylıyor musunuz?</p>
             <div className="flex flex-col gap-3">
-              <button onClick={handleRequest} className="w-full bg-pink-500 text-white py-4 rounded-3xl font-black shadow-xl shadow-pink-200 active:scale-95 transition-all">Evet, İstiyorum</button>
+              <button onClick={handleRequest} className="w-full bg-pink-500 text-white py-4 rounded-2xl font-black shadow-xl shadow-pink-200 active:scale-95 transition-all">Evet, İstiyorum</button>
               <button onClick={() => setShowConfirmModal(false)} className="w-full bg-slate-50 text-slate-400 py-3.5 rounded-3xl font-bold active:scale-95">Vazgeç</button>
             </div>
           </div>
@@ -370,6 +371,7 @@ export default function App() {
                 <div className="flex items-center gap-2 ml-3">
                     <History size={16} className="text-slate-400"/>
                     <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">GEÇMİŞ TALEPLERİM</h3>
+                    <button onClick={() => fetchData()} className="ml-auto p-2 text-slate-300 hover:text-pink-500 transition-colors"><Activity size={14}/></button>
                 </div>
                 {requests.map(req => (
                     <div key={req.id} className="bg-white p-5 rounded-[45px] border border-slate-50 shadow-sm animate-in fade-in slide-in-from-bottom-2 duration-500 relative overflow-hidden">
@@ -533,7 +535,7 @@ export default function App() {
                 </div>
             </div>
 
-            <div className="bg-white p-10 rounded-[55px] shadow-sm border border-slate-50">
+            <div className="bg-white p-10 rounded-[55px] shadow-sm border border-slate-100">
                 <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 flex items-center gap-3"><TrendingUp size={18} className="text-pink-500"/> Lokasyon Bazlı Talep</h3>
                 <div className="space-y-6">
                     {getAnalytics().hotspots.map(([loc, count]) => (
